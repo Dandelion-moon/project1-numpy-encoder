@@ -6,6 +6,9 @@ The public classes retain the final project's interface. helpers.py is provided.
 import numpy as np
 from helpers import LayerNorm, GELU, attention_weights, causal_mask, unit_vector
 
+IMAGE_SIZE = 224
+PATCH_SIZE = 32
+
 
 class MultiHeadAttention:
     def __init__(self, weights, prefix, heads):
@@ -99,20 +102,34 @@ class ImageEncoder:
         """
         # TODO-01: separate patch-grid axes; reorder; flatten.
         # Input [B,3,224,224], return [B,49,3072].
-        raise NotImplementedError('TODO-01: turn each image into 49 patch rows')
+        batch, channels, height, width = images.shape
+        if (channels, height, width) != (3, IMAGE_SIZE, IMAGE_SIZE):
+            raise ValueError(
+                'patchify expects [B,3,224,224], got '
+                f'{tuple(images.shape)}')
+        grid = height // PATCH_SIZE  # 7
+        # [B,C,gridH,patchH,gridW,patchW] -> [B,gridH,gridW,C,patchH,patchW].
+        # The last three axes already flatten as C,H,W inside one patch.
+        patches = images.reshape(
+            batch, channels, grid, PATCH_SIZE, grid, PATCH_SIZE)
+        patches = patches.transpose(0, 2, 4, 1, 3, 5)
+        return patches.reshape(
+            batch, grid * grid, channels * PATCH_SIZE * PATCH_SIZE)
 
     def embed(self, images):
         patches = self.patchify(images)  # [B,49,3072]
 
         # TODO-05a: project patches to [B,49,768]. There is no patch bias.
-        raise NotImplementedError('TODO-05a: apply the supplied patch projection')
+        # patch_weight is [768,3072] = [out,in], so multiply by its transpose.
+        patch_tokens = patches @ self.patch_weight.T
 
         # Given: one supplied CLS row per image.
         cls = np.tile(self.cls, (images.shape[0], 1, 1))
 
         # TODO-05b: prepend CLS on the token axis, then add learned positions.
         # Return [B,50,768]. self.position broadcasts over B.
-        raise NotImplementedError('TODO-05b: CLS, patch rows and positions')
+        tokens = np.concatenate((cls, patch_tokens), axis=1)
+        return tokens + self.position
 
     def encode_tokens(self, images):
         """Provided assembly of token input and the 12 blocks; [B,50,768]."""
