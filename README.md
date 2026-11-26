@@ -78,7 +78,7 @@ python check.py --stage block0
 python check.py --stage last_tokens
 python check.py --stage output
 python check.py --stage batch
-python check.py --stage all          # 一次跑完全部 8 个阶段
+python check.py --stage all          # 8 项检查（assets 校验 + 7 个数值阶段）
 
 # 4) 对 10 张课程图像生成输出 token，保存为 npz
 python run.py --output artifacts/output_tokens.npz
