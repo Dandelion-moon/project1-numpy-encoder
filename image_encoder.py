@@ -27,8 +27,12 @@ class MultiHeadAttention:
         Research the head organization independently. Preserve token order.
         """
         # TODO-02 contract: [B,N,D] to [B,H,N,D/H].
-        # Image model: D=768, H=12, D/H=64.
-        raise NotImplementedError('TODO-02: split the feature axis into heads')
+        # The feature axis is cut into H contiguous slices of head_dim values;
+        # move the new head axis in front of the token axis, keeping B first.
+        batch, tokens, width = x.shape
+        heads = self.heads
+        head_dim = self.head_dim
+        return x.reshape(batch, tokens, heads, head_dim).transpose(0, 2, 1, 3)
 
     def __call__(self, x, causal=False):
         # Given: stored linear weights use [out,in]. Parameters stay fixed.
@@ -39,7 +43,9 @@ class MultiHeadAttention:
 
         # TODO-03a: query/key comparisons, scaled by sqrt(head_dim).
         # q,k,v: [B,H,N,64]. scores must have [B,H,N,N].
-        raise NotImplementedError('TODO-03a: calculate scores from q and k')
+        # Only the last two axes are transposed, so image and head stay separate.
+        scale = np.sqrt(np.float32(self.head_dim))
+        scores = q @ k.transpose(0, 1, 3, 2) / scale
 
         # Given for later text-encoder compatibility. Images use causal=False.
         if causal:
@@ -48,11 +54,13 @@ class MultiHeadAttention:
 
         # TODO-03b: mix value rows using coefficients; then join head outputs.
         # context: [B,H,N,64], merged: [B,N,D].
-        raise NotImplementedError('TODO-03b: weighted values and merged heads')
+        context = coefficients @ v
+        merged = context.transpose(0, 2, 1, 3).reshape(
+            context.shape[0], context.shape[2], self.width)
 
         # TODO-03c: output projection, using out_weight and out_bias.
         # Return [B,N,D]. Remember the stored linear-weight orientation.
-        raise NotImplementedError('TODO-03c: project merged attention outputs')
+        return merged @ self.out_weight.T + self.out_bias
 
 
 class TransformerBlock:
