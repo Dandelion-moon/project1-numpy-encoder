@@ -1,0 +1,7 @@
+{
+  "correct_max_abs": 0.0,
+  "wrong_flat_vs_reference_max_abs": 3.938159465789795,
+  "wrong_flat_vs_reference_mean_abs": 0.9859526753425598,
+  "wrong_transpose_vs_reference_max_abs": 3.9235610961914062,
+  "wrong_flat_projected_token_max_abs": 33.128631591796875
+}
