@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 大参数文件与参考数据：按作业要求不提交，由课程附件提供
+weights/image_encoder.npz
+assets/reference_outputs.npz
+
+# 运行产物
+output_tokens.npz
+artifacts/output_tokens.npz
+*.log
+
+# 操作系统
+Thumbs.db
+.DS_Store
